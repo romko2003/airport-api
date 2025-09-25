@@ -19,23 +19,13 @@ Orders & Tickets
 
 Create orders with multiple tickets in one request
 
-Strong validation (bounds & seat availability)
+Strong validation (seat bounds & availability)
 
-Auth
+Auth: JWT access & refresh tokens
 
-JWT access & refresh tokens
+Docs: OpenAPI schema & Swagger UI at /api/docs/
 
-Docs
-
-OpenAPI schema & Swagger UI at /api/docs/
-
-Batteries included
-
-Docker/Compose, Postgres, wait_for_db command, static/media volumes
-
-Demo seeder (seed_demo)
-
-Basic tests (tests/)
+Batteries included: Docker/Compose, Postgres, wait_for_db command, static/media volumes, demo seeder, basic tests
 
 🧱 Tech Stack
 
@@ -52,7 +42,7 @@ config/                 # Django project (settings, urls, wsgi)
 core/                   # App with models, serializers, views, urls
   management/commands/
     wait_for_db.py      # Blocks until DB is ready (Docker)
-    seed_demo.py        # Create demo data (users, airports, flight, etc.)
+    seed_demo.py        # Demo data (users, airports, flight, etc.)
 tests/                  # Basic API tests (flights, orders)
 manage.py
 requirements.txt
@@ -62,19 +52,21 @@ entrypoint.sh
 
 🛠️ Quick Start (Local, SQLite)
 python -m venv venv
-source venv/bin/activate         # Windows: venv\Scripts\activate
+source venv/bin/activate      # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 python manage.py migrate
 python manage.py runserver
 
-# (optional) demo data
-python manage.py seed_demo
-
 
 Open: http://127.0.0.1:8000/api/docs/
 
-Create a superuser (optional):
+Optional: seed demo data
+
+python manage.py seed_demo
+
+
+Optional: create superuser
 
 python manage.py createsuperuser
 
@@ -83,14 +75,12 @@ docker-compose up --build
 # App: http://127.0.0.1:8000/api/docs/
 
 
-The app uses:
+The app executes:
+wait_for_db → migrate → collectstatic → gunicorn
 
-wait_for_db → migrate → collectstatic → run gunicorn
+Named volumes are used for /vol/web/static and /vol/web/media.
 
-Named volumes for /vol/web/static and /vol/web/media
-
-Environment variables (compose sets sane defaults):
-
+Environment Variables
 Variable	Example	Description
 SECRET_KEY	change-me	Django secret key
 DEBUG	1 / 0	Debug mode
@@ -104,40 +94,38 @@ STATIC_ROOT	/vol/web/static	Static files target
 MEDIA_ROOT	/vol/web/media	Uploaded media target
 🔐 Authentication (JWT)
 
-Obtain token
-POST /api/token/
+Obtain token — POST /api/token/
 
 { "username": "admin", "password": "adminpass" }
 
 
-Response:
+Response
 
 { "access": "<JWT_ACCESS>", "refresh": "<JWT_REFRESH>" }
 
 
-Use the access token:
+Use the access token in requests:
 
 Authorization: Bearer <JWT_ACCESS>
 
 
-Refresh token
-POST /api/token/refresh/
+Refresh token — POST /api/token/refresh/
 
 { "refresh": "<JWT_REFRESH>" }
 
 📚 API Overview
 
-Airports /api/airports/
+Airports — /api/airports/
 
-Airplane Types /api/airplane-types/
+Airplane Types — /api/airplane-types/
 
-Airplanes /api/airplanes/ (capacity = rows × seats_in_row)
+Airplanes — /api/airplanes/ (capacity = rows × seats_in_row)
 
-Routes /api/routes/ (unique by source+destination)
+Routes — /api/routes/ (unique by source+destination)
 
-Crew /api/crew/
+Crew — /api/crew/
 
-Flights /api/flights/
+Flights — /api/flights/
 
 Filters (query params):
 
@@ -151,9 +139,9 @@ airplane=<airplane_id>
 
 Extra: GET /api/flights/{id}/seat-map/
 
-Orders /api/orders/
+Orders — /api/orders/
 
-POST body:
+POST body
 
 {
   "tickets": [
@@ -163,25 +151,30 @@ POST body:
 }
 
 
-All endpoints are documented in Swagger UI at /api/docs/.
+All endpoints are documented in Swagger UI: /api/docs/.
 
 🧪 Tests & Lint
 
-Local:
+Local
 
 python manage.py test
 flake8
 
 
-Docker:
+Docker
 
 docker-compose run --rm app sh -c "python manage.py test"
-docker-compose run --rm app sh -c 'flake8'
+docker-compose run --rm app sh -c "flake8"
 
 🌱 Demo Data
-# local
+
+Local
+
 python manage.py seed_demo
-# docker
+
+
+Docker
+
 docker-compose run --rm app sh -c "python manage.py seed_demo"
 
 
@@ -189,37 +182,38 @@ Creates:
 
 users: admin/adminpass, user/userpass
 
-a couple of entities (airports, airplane, route, crew) and one flight tomorrow
+a few entities (airports, airplane, route, crew) and one flight tomorrow
 
 🧩 Data Model (ERD)
 Airport 1—n Route n—1 Airport
-Route 1—n Flight n—1 Airplane  n—1 AirplaneType
+Route  1—n Flight n—1 Airplane  n—1 AirplaneType
 Flight n—n Crew (M2M)
-Order 1—n Ticket n—1 Flight
+Order  1—n Ticket n—1 Flight
+
 Airplane has rows & seats_in_row → capacity
-Flight exposes available_tickets = capacity - sold
+Flight.available_tickets = capacity - sold
 
 
-(Add your ER diagram image to the repo and link it here if you want a visual.)
+(Optional: add a diagram image to the repo and link it here.)
 
 🧰 Common Issues & Fixes
 
 zsh: command not found: python
 Use python3, or install Python and add alias:
 
-brew install python     # macOS
+brew install python
 echo 'alias python="python3"' >> ~/.zshrc && source ~/.zshrc
 
 
 DB not ready in Docker
-The app runs wait_for_db before migrations. If it still fails, check:
+The app runs wait_for_db before migrations. If it still fails:
 
 docker-compose logs db
 docker-compose logs app
 
 
 Static/Media permissions in Docker
-Volumes are chowned at runtime in entrypoint.sh. If you changed paths, update env vars & volumes accordingly.
+Volumes are chowned at runtime in entrypoint.sh. If you change paths, update env vars & volumes accordingly.
 
 🗺️ Roadmap (ideas)
 
@@ -235,16 +229,14 @@ Caching seat-maps & availability
 
 📄 License
 
-MIT (or choose your license). Add LICENSE file if needed.
+MIT (or your chosen license). Add a LICENSE file if needed.
 
-❤️ Tips
+❤️ Portfolio Tips
 
-If you use this for your portfolio:
+Add screenshots of /api/docs/ and a few endpoints
 
-Add screenshots of /api/docs and a few endpoints
+Include an ERD image
 
-Put ERD image in the repo
-
-Describe optional features you implemented
+Describe any optional features you implemented
 
 Link a running demo if you deploy it
