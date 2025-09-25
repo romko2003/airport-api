@@ -38,6 +38,7 @@ PostgreSQL (Docker), SQLite (local quick start)
 gunicorn (WSGI, Docker runtime)
 
 📦 Repository Structure (key parts)
+
 config/                 # Django project (settings, urls, wsgi)
 core/                   # App with models, serializers, views, urls
   management/commands/
@@ -50,14 +51,15 @@ Dockerfile
 docker-compose.yml
 entrypoint.sh
 
+
 🛠️ Quick Start (Local, SQLite)
+
 python -m venv venv
 source venv/bin/activate      # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 python manage.py migrate
 python manage.py runserver
-
 
 Open: http://127.0.0.1:8000/api/docs/
 
