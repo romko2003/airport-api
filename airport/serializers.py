@@ -10,6 +10,7 @@ from airport.models import (
     Order,
     Ticket,
 )
+from airport.services import create_order_with_tickets, SeatBookingError
 
 
 class AirportSerializer(serializers.ModelSerializer):
@@ -136,8 +137,9 @@ class FlightDetailSerializer(serializers.ModelSerializer):
 class TicketSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
-        fields = ("id", "row", "seat", "flight", "order")
-        read_only_fields = ("order",)
+        fields = ("id", "row", "seat", "flight")
+        # order is implicit via parent (Order)
+        read_only_fields = ("flight",)
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -147,3 +149,43 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = ("id", "created_at", "tickets")
         read_only_fields = ("created_at",)
+
+
+class OrderCreateSerializer(serializers.ModelSerializer):
+    """
+    Creates an order and books seats for a specific flight.
+    """
+    flight_id = serializers.PrimaryKeyRelatedField(
+        queryset=Flight.objects.all(),
+        write_only=True,
+    )
+    seats = serializers.ListField(
+        child=serializers.DictField(child=serializers.IntegerField()),
+        allow_empty=False,
+        write_only=True,
+    )
+    tickets = TicketSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ("id", "created_at", "flight_id", "seats", "tickets")
+        read_only_fields = ("id", "created_at", "tickets")
+
+    def validate_seats(self, seats):
+        for s in seats:
+            if "row" not in s or "seat" not in s:
+                raise serializers.ValidationError("Each seat must contain 'row' and 'seat'.")
+        return seats
+
+    def create(self, validated_data):
+        request = self.context["request"]
+        user = request.user
+        flight = validated_data["flight_id"]
+        seats = validated_data["seats"]
+
+        try:
+            order = create_order_with_tickets(user=user, flight=flight, seats=seats)
+        except SeatBookingError as e:
+            raise serializers.ValidationError({"seats": str(e)}) from e
+
+        return order

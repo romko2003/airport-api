@@ -14,6 +14,7 @@ from airport.serializers import (
     FlightListSerializer,
     FlightDetailSerializer,
     OrderSerializer,
+    OrderCreateSerializer,
 )
 
 
@@ -101,19 +102,12 @@ class FlightViewSet(viewsets.ModelViewSet):
 
 
 class OrderViewSet(viewsets.ModelViewSet):
-    """
-    For now:
-    - users can list their own orders
-    - create empty order (tickets logic will be implemented in PR #4)
-    """
-    serializer_class = OrderSerializer
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
-        return (
-            Order.objects.filter(user=self.request.user)
-            .prefetch_related("tickets__flight")
-        )
+        return Order.objects.filter(user=self.request.user).prefetch_related("tickets__flight")
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+    def get_serializer_class(self):
+        if self.action == "create":
+            return OrderCreateSerializer
+        return OrderSerializer
